@@ -1,0 +1,85 @@
+---
+title: "Practical Machine Learning Project"
+author: "Sònia Miarnau Freixes"
+date: "1 de maig de 2016"
+output: html_document
+---
+
+###Preparing data
+
+We load the caret library and then read the data we are working with.
+
+```{r, warning=FALSE}
+library(caret)
+```
+```{r}
+dataTest <- read.csv("pml-testing.csv", na.strings = c("", "NA"))
+allData <- read.csv("pml-training.csv", na.strings = c("", "NA"))
+```
+
+We randomly split the full training data into a smaller training set and a tiny testing set.
+
+```{r}
+set.seed(1414)
+inTrain <- createDataPartition(allData$classe, p = 0.7,list=FALSE)
+training = allData[ inTrain,]
+testing = allData[-inTrain,]
+```
+
+We clean the columns that doesn't contain data and only have NAs.
+We also remove variables that aren't necessary for the prediction which happen to be the first 8 variables.
+We also clean the testing set.
+
+```{r}
+emptyCols <- names(training[,colSums(is.na(training)) == 0])
+data <- training[,c(emptyCols)]
+data <- data[,8:length(names(data))]
+
+testing2 <- testing[,c(emptyCols)]
+testing2 <- testing[,8:length(names(testing2))]
+```
+
+Some features may be highly correlated. The PCA method mixes the final features into components that are difficult to interpret; instead, I drop features with high correlation (>90%).
+
+```{r}
+outcome = which(names(data) == "classe")
+highCorrCols = findCorrelation(abs(cor(data[,-outcome])),0.90)
+highCorrFeatures = names(data)[highCorrCols]
+cleanTraining = data[,-highCorrCols]
+
+cleanTesting = testing2[,-highCorrCols]
+```
+
+The features with high correlation are accel_belt_z, roll_belt, accel_belt_y, accel_belt_x, gyros_arm_y, gyros_forearm_z, and gyros_dumbbell_x.
+
+###Model Building
+
+We decided to start with a Random Forest model, to see if it would have acceptable performance.
+
+```{r, cache=TRUE}
+library(randomForest)
+controlRF = trainControl(method = "oob")
+fit <- train(classe ~ ., data=cleanTraining, method="rf", trControl=controlRF)
+print(fit$finalModel)
+```
+The model has used 500 trees and decides to try 23 variables at each split.
+
+###Model Evaluation and Selection
+Next step is to predict the “classe" in "testing" data, using the fitted model. This is   the confusion matrix to compare the predicted versus the actual labels:
+
+```{r}
+fitRF = predict(fit, testing)
+# show confusion matrix to get estimate of out-of-sample error
+confusionMatrix(testing$classe, fitRF)
+```
+
+The accuracy is 0.9917 so the predicted accuracy for the out-of-sample error is less than a 0.01%. As this is an excellent result, rather than trying additional algorithms, I will use Random Forests to predict on the test set.
+
+###Making Test Set Predictions
+Now, I use the random forest model to predict the "class" value for the observations in the dataTest.
+
+```{r}
+# predict on test set
+preds <- predict(fit, dataTest)
+print(preds)
+```
