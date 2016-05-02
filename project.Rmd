@@ -5,11 +5,18 @@ date: "1 de maig de 2016"
 output: html_document
 ---
 
+###Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement—a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+The goal of our project is to predict the manner in which they did the exercise. We are going to obtain that prediction usin the "classe" variable in the training set, and maybe other variables.
+At the end of the project, our prediction model is going to help us to predict 20 different test cases.
+
 ###Preparing data
 
 We load the caret library and then read the data we are working with.
 
-```{r, warning=FALSE}
+```{r, warning=FALSE,message=FALSE}
 library(caret)
 ```
 ```{r}
@@ -56,8 +63,10 @@ The features with high correlation are accel_belt_z, roll_belt, accel_belt_y, ac
 
 We decided to start with a Random Forest model, to see if it would have acceptable performance. The “train” function uses a 3-fold cross-validation.
 
-```{r, cache=TRUE}
+```{r, warning=FALSE,message=FALSE}
 library(randomForest)
+```
+```{r, cache=TRUE}
 controlRF <- trainControl(method='cv',number=3)
 
 fit <- train(classe ~ ., data=cleanTraining, method="rf", trControl=controlRF)
@@ -68,7 +77,7 @@ The model has used 500 trees and decides to try 24 variables at each split.
 ###Model Evaluation and Selection
 Next step is to predict the “classe" in "testing" data, using the fitted model. This is   the confusion matrix to compare the predicted versus the actual labels:
 
-```{r, warning=FALSE}
+```{r}
 fitRF = predict(fit, testing)
 # show confusion matrix to get estimate of out-of-sample error
 confusionMatrix(testing$classe, fitRF)
