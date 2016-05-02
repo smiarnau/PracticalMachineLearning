@@ -54,26 +54,27 @@ The features with high correlation are accel_belt_z, roll_belt, accel_belt_y, ac
 
 ###Model Building
 
-We decided to start with a Random Forest model, to see if it would have acceptable performance.
+We decided to start with a Random Forest model, to see if it would have acceptable performance. The “train” function uses a 3-fold cross-validation.
 
 ```{r, cache=TRUE}
 library(randomForest)
-controlRF = trainControl(method = "oob")
+controlRF <- trainControl(method='cv',number=3)
+
 fit <- train(classe ~ ., data=cleanTraining, method="rf", trControl=controlRF)
 print(fit$finalModel)
 ```
-The model has used 500 trees and decides to try 23 variables at each split.
+The model has used 500 trees and decides to try 24 variables at each split.
 
 ###Model Evaluation and Selection
 Next step is to predict the “classe" in "testing" data, using the fitted model. This is   the confusion matrix to compare the predicted versus the actual labels:
 
-```{r}
+```{r, warning=FALSE}
 fitRF = predict(fit, testing)
 # show confusion matrix to get estimate of out-of-sample error
 confusionMatrix(testing$classe, fitRF)
 ```
 
-The accuracy is 0.9917 so the predicted accuracy for the out-of-sample error is less than a 0.01%. As this is an excellent result, rather than trying additional algorithms, I will use Random Forests to predict on the test set.
+The accuracy is 0.9944 so the predicted accuracy for the out-of-sample error is less than a 0.01%. As this is an excellent result, rather than trying additional algorithms, I will use Random Forests to predict on the test set.
 
 ###Making Test Set Predictions
 Now, I use the random forest model to predict the "class" value for the observations in the dataTest.
